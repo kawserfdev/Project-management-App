@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "959053640502",
+    "project_id": "colliq-team",
+    "storage_bucket": "colliq-team.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:959053640502:android:a7735fb41759e5edd7f997",
+        "android_client_info": {
+          "package_name": "com.kawser.colliq"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "959053640502-j0scjr697o0i51sf0vujr3h539q95di4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBBbiRtsC6vw8jKxn45INZ_rXi_WBxXtpw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "959053640502-j0scjr697o0i51sf0vujr3h539q95di4.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "959053640502-ng4d1clql9n8ijferbbe0p4a721sp4ka.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.kawser.colliq"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

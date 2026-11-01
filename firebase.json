@@ -1,0 +1,53 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "colliq-team",
+          "appId": "1:959053640502:android:a7735fb41759e5edd7f997",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "colliq-team",
+          "configurations": {
+            "android": "1:959053640502:android:a7735fb41759e5edd7f997",
+            "ios": "1:959053640502:ios:aa89079c444691c2d7f997",
+            "web": "1:959053640502:web:64e66fe975e95ce2d7f997"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "database": "(default)",
+    "location": "asia-south1",
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "hosting": {
+    "public": "build/web",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  },
+  "auth": {
+    "providers": {
+      "anonymous": true,
+      "emailPassword": true,
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "colliq-team",
+        "supportEmail": "support@colliq-team.firebaseapp.com"
+      }
+    }
+  }
+}

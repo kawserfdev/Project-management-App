@@ -1,0 +1,145 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:task_manager_app/core/constants/app_colors.dart';
+import 'package:task_manager_app/core/constants/app_enums.dart';
+import 'package:task_manager_app/core/constants/app_images.dart';
+import 'package:task_manager_app/core/di/service_locator.dart';
+import 'package:task_manager_app/core/helpers/spacing.dart';
+import 'package:task_manager_app/core/routes/routes.dart';
+import 'package:task_manager_app/core/services/session_manager.dart';
+import 'package:task_manager_app/core/themes/app_text_themes.dart';
+import 'package:task_manager_app/core/utils/utils.dart';
+import 'package:task_manager_app/core/widgets/app_button_widget.dart';
+import 'package:task_manager_app/core/widgets/app_divider_widget.dart';
+import 'package:task_manager_app/features/authentication/presentation/manager/cubits/google_sign_in/google_sign_in_cubit.dart';
+import 'package:task_manager_app/features/authentication/presentation/manager/cubits/google_sign_in/google_sign_in_state.dart';
+import 'package:task_manager_app/features/authentication/presentation/manager/cubits/login_with_email_and_password/login_with_email_and_password_cubit.dart';
+import 'package:task_manager_app/features/authentication/presentation/widgets/login_form.dart';
+
+class LoginView extends StatelessWidget {
+  const LoginView({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: SingleChildScrollView(
+              padding: EdgeInsets.symmetric(vertical: 56.0.h, horizontal: 24.0.w),
+              child: Column(
+                children: [
+                BlocProvider(
+                  create: (context) => getIt<LoginWithEmailAndPasswordCubit>(),
+                  child: const LoginForm(),
+                ),
+                verticalSpace(16),
+                const AppDividerWidget(),
+                verticalSpace(24),
+                BlocProvider(
+                  create: (context) => GoogleSignInCubit(),
+                  child: BlocConsumer<GoogleSignInCubit, GoogleSignInState>(
+                    listener: (context, state) {
+                      if (state is GoogleSignInFailure) {
+                        Utils.showSnackBar(context,
+                            'Login Failed: ${state.error}', SnackBarType.error);
+                      } else if (state is GoogleSignInSuccess) {
+                        SessionManager.saveUserSession(
+                          id: state.user.uid,
+                          email: state.user.email,
+                          displayName: state.user.displayName,
+                        );
+                        Utils.showSnackBar(
+                            context, 'Welcome Back!', SnackBarType.success);
+                          Navigator.pushNamedAndRemoveUntil(
+                            context, Routes.homeView, (route) => false);
+                      }
+                    },
+                    builder: (context, state) {
+                      if (state is GoogleSignInLoading) {
+                        return const CircularProgressIndicator();
+                      }
+
+                      return AppButtonWidget(
+                        hideIcon: true,
+                        text: 'Continue with Google',
+                        onTap: () {
+                          context.read<GoogleSignInCubit>().signInWithGoogle();
+                        },
+                        width: double.infinity,
+                        textStyle: AppTextThemes.font16WhiteRegular.copyWith(
+                          color: AppColors.white.withValues(alpha: 0.87),
+                        ),
+                        backgroundColor: AppColors.black,
+                        borderColor: AppColors.primaryColor,
+                      );
+                    },
+                  ),
+                ),
+                verticalSpace(16),
+                AppButtonWidget(
+                  hideIcon: true,
+                  text: 'Continue with Apple',
+                  onTap: () {
+                    Utils.showSnackBar(
+                        context, 'Coming Soon', SnackBarType.info);
+                  },
+                  width: double.infinity,
+                  textStyle: AppTextThemes.font16WhiteRegular.copyWith(
+                    color: AppColors.white.withValues(alpha: 0.87),
+                  ),
+                  backgroundColor: AppColors.black,
+                  borderColor: AppColors.primaryColor,
+                  iconPath: AppImages.apple,
+                ),
+                verticalSpace(32),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.pushNamed(context, Routes.registerView);
+                  },
+                  child: Text.rich(
+                    TextSpan(
+                      text: 'Don\'t have an account? ',
+                      style: AppTextThemes.font12GreyRegular,
+                      children: [
+                        TextSpan(
+                          text: 'Create Account',
+                          style: AppTextThemes.font12WhiteRegular.copyWith(
+                              color: AppColors.primaryColor.withValues(alpha: 0.87)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                verticalSpace(16),
+                TextButton(
+                  onPressed: () async {
+                    await SessionManager.saveGuestSession();
+                    if (context.mounted) {
+                      Navigator.pushNamedAndRemoveUntil(
+                        context,
+                        Routes.homeView,
+                        (route) => false,
+                      );
+                    }
+                  },
+                  child: const Text(
+                    'Skip / Continue as Guest',
+                    style: TextStyle(
+                      color: AppColors.primaryColor,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+}
