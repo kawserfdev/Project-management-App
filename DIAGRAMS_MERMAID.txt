@@ -1,0 +1,195 @@
+================================================================================
+DIAGRAM 1: AGILE SCRUM METHODOLOGY (Chapter 2.1)
+================================================================================
+flowchart LR
+    A["Sprint Planning<br/>(Requirement Gathering)"] --> B["Design & Modeling<br/>(ERD, DFD, Architecture)"]
+    B --> C["Implementation<br/>(Flutter + Firebase)"]
+    C --> D["Testing & Verification<br/>(Unit & Widget Tests)"]
+    D --> E["Sprint Review & Deployment"]
+    E --> A
+
+
+================================================================================
+DIAGRAM 2: HIGH-LEVEL SYSTEM ARCHITECTURE (Chapter 3.1)
+================================================================================
+graph TD
+    User["Project Manager / Developer"] --> UI["Flutter Presentation Layer (Views & Widgets)"]
+    UI --> Cubit["State Management (BLoC / Cubits)"]
+    Cubit --> Repo["Repository Layer (Business Logic)"]
+    Repo --> DS["Remote Data Source (Firestore API)"]
+    DS --> Cloud["Google Cloud Firestore & Firebase Auth"]
+
+
+================================================================================
+DIAGRAM 3: FLOWCHART - PROJECT CREATION, ASSIGNMENT & DEADLINE LOGIC (Chapter 3.2)
+================================================================================
+flowchart TD
+    Start([Start]) --> Login["User Authenticates (Login)"]
+    Login --> CheckRole{"Is User Project Manager?"}
+    
+    CheckRole -- Yes --> CreateProj["Create Project & Divide into Modules"]
+    CreateProj --> AssignTask["Assign Task to Specific Developer"]
+    AssignTask --> SetDeadline["Set Target Deadline Date & Time"]
+    SetDeadline --> SaveDB[("Store in Cloud Firestore")]
+    
+    CheckRole -- No --> ViewAssigned["Developer Views Assigned Tasks"]
+    SaveDB --> ViewAssigned
+    
+    ViewAssigned --> DevActions{"Developer Action"}
+    DevActions -- Add Subtask --> Subtask["Create Subtasks under Task"]
+    DevActions -- Post Comment --> Comment["Post Update / Comment"]
+    DevActions -- Mark Done --> Complete["Mark Task as Completed"]
+    
+    Subtask --> SaveDB
+    Comment --> SaveDB
+    Complete --> DeadlineCheck
+    
+    subgraph Deadline_Status_Engine ["Deadline Status Engine"]
+        DeadlineCheck{"Is Task Completed?"}
+        DeadlineCheck -- Yes --> TimeCheck1{"Completed Time <= Deadline?"}
+        TimeCheck1 -- Yes --> GreenState["Mark Status GREEN: On Time (Done)"]
+        TimeCheck1 -- No --> OrangeState["Mark Status ORANGE: Completed Late"]
+        
+        DeadlineCheck -- No --> TimeCheck2{"Current Time > Deadline?"}
+        TimeCheck2 -- Yes --> RedState["Mark Status RED: Overdue / Delayed"]
+        TimeCheck2 -- No --> BlueState["Mark Status BLUE: In Progress"]
+    end
+    
+    GreenState --> Monitor["PM Dashboard Real-Time Monitoring"]
+    RedState --> Monitor
+    OrangeState --> Monitor
+    BlueState --> Monitor
+    Monitor --> End([End])
+
+
+================================================================================
+DIAGRAM 4: ENTITY-RELATIONSHIP (E-R) DIAGRAM (Chapter 3.3)
+================================================================================
+erDiagram
+    USER ||--o{ PROJECT : manages
+    USER ||--o{ TASK : assigned_to
+    USER ||--o{ COMMENT : writes
+    PROJECT ||--|{ TASK : contains
+    TASK ||--o{ SUBTASK : includes
+    TASK ||--o{ COMMENT : receives
+
+    USER {
+        string uid PK
+        string displayName
+        string email
+        string role "PM or Developer"
+    }
+
+    PROJECT {
+        string id PK
+        string title
+        string description
+        string managerId FK
+        datetime createdAt
+    }
+
+    TASK {
+        string id PK
+        string projectId FK
+        string title
+        string description
+        string assigneeId FK
+        datetime deadline
+        string status "Backlog, InProgress, Done"
+        boolean isCompleted
+        datetime completedAt
+    }
+
+    SUBTASK {
+        string id PK
+        string taskId FK
+        string title
+        boolean isCompleted
+    }
+
+    COMMENT {
+        string id PK
+        string taskId FK
+        string authorId FK
+        string text
+        datetime timestamp
+    }
+
+
+================================================================================
+DIAGRAM 5: DFD LEVEL 0 / CONTEXT DIAGRAM (Chapter 3.4.1)
+================================================================================
+flowchart LR
+    PM["Project Manager"] -- "Project Details & Task Assignment" --> System["Collaborative Project Management System"]
+    System -- "Task Progress & Deadline Status (Green/Red)" --> PM
+    
+    Dev["Programmer / Developer"] -- "Subtask Creation, Status Update, Comments" --> System
+    System -- "Assigned Tasks & Alerts" --> Dev
+
+
+================================================================================
+DIAGRAM 6: DFD LEVEL 1 DECOMPOSED MODULES (Chapter 3.4.2)
+================================================================================
+flowchart TD
+    PM["Project Manager"]
+    Dev["Developer"]
+    
+    D1[("Users Store")]
+    D2[("Projects & Tasks Store")]
+    D3[("Comments Store")]
+    
+    P1["1.0 User Authentication & Role Verification"]
+    P2["2.0 Project Division & Assignment Engine"]
+    P3["3.0 Subtask & Progress Tracker"]
+    P4["4.0 Deadline Verification & Color Coder"]
+    P5["5.0 Collaboration & Comment Engine"]
+    
+    PM -->|Credentials| P1
+    Dev -->|Credentials| P1
+    P1 <-->|Read / Write| D1
+    
+    PM -->|Create Project & Assign Task| P2
+    P2 <-->|Store Project & Task| D2
+    
+    P2 -->|Notify Assignment| Dev
+    Dev -->|Create Subtask & Complete Task| P3
+    P3 <-->|Update State| D2
+    
+    D2 -->|Read Timestamps & Deadline| P4
+    P4 -->|Calculate Green / Red Status| PM
+    P4 -->|Calculate Green / Red Status| Dev
+    
+    PM & Dev -->|Add Comment| P5
+    P5 <-->|Store Comments| D3
+    D3 -->|Display Discussion Thread| PM & Dev
+
+
+================================================================================
+DIAGRAM 7: USE CASE DIAGRAM (Chapter 3.5)
+================================================================================
+flowchart LR
+    subgraph System_Boundary ["Project Management System"]
+        UC1["Create & Configure Project"]
+        UC2["Divide Project into Parts"]
+        UC3["Assign Task to Developer"]
+        UC4["Monitor Project Health & Deadlines"]
+        UC5["View Assigned Tasks"]
+        UC6["Create & Toggle Subtasks"]
+        UC7["Mark Task as Completed"]
+        UC8["Post Discussion Comments"]
+        UC9["View Color-Coded Status (Green/Red)"]
+    end
+
+    PM["Project Manager"] --> UC1
+    PM --> UC2
+    PM --> UC3
+    PM --> UC4
+    PM --> UC8
+    PM --> UC9
+
+    Dev["Programmer / Developer"] --> UC5
+    Dev --> UC6
+    Dev --> UC7
+    Dev --> UC8
+    Dev --> UC9
+
