@@ -14,7 +14,7 @@
       },
       "oauth_client": [
         {
-          "client_id": "959053640502-j0scjr697o0i51sf0vujr3h539q95di4.apps.googleusercontent.com",
+          "client_id": "959053640502-2t7vfpl3fsfq3g3hqpj9n7tltplal3d2.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
@@ -27,11 +27,11 @@
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "959053640502-j0scjr697o0i51sf0vujr3h539q95di4.apps.googleusercontent.com",
+              "client_id": "959053640502-2t7vfpl3fsfq3g3hqpj9n7tltplal3d2.apps.googleusercontent.com",
               "client_type": 3
             },
             {
-              "client_id": "959053640502-ng4d1clql9n8ijferbbe0p4a721sp4ka.apps.googleusercontent.com",
+              "client_id": "959053640502-2t7vfpl3fsfq3g3hqpj9n7tltplal3d2.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
                 "bundle_id": "com.kawser.colliq"

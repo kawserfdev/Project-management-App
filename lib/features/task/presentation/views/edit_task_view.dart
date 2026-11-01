@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -131,11 +132,16 @@ class _EditTaskViewState extends State<EditTaskView> {
   void _addComment() {
     final text = _commentController.text.trim();
     if (text.isEmpty) return;
+    final user = FirebaseAuth.instance.currentUser;
+    final authorName = (user?.displayName != null && user!.displayName!.isNotEmpty)
+        ? user.displayName!
+        : (user?.email?.split('@').first ?? 'Developer');
+
     setState(() {
       _comments.add(
         TaskComment(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
-          author: 'Me',
+          author: authorName,
           message: text,
           createdAt: DateTime.now(),
         ),

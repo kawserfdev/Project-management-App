@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:task_manager_app/core/errors/exceptions.dart';
@@ -19,7 +20,16 @@ class GoogleSignInCubit extends Cubit<GoogleSignInState> {
       final user = await _authRepo.signInWithGoogle();
       if (user != null) {
         emit(GoogleSignInSuccess(user));
+      } else {
+        emit(GoogleSignInInitial());
       }
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'popup-closed-by-user' || e.code == 'cancelled') {
+        emit(GoogleSignInInitial());
+        return;
+      }
+      AppLogger.error("FirebaseAuthException", e);
+      emit(GoogleSignInFailure(e.message ?? e.code));
     } on AppFirebaseAuthException catch (e) {
       AppLogger.error("Firebase Auth Exception", e);
       emit(GoogleSignInFailure(AppFirebaseAuthException(e.message).message));
@@ -33,9 +43,14 @@ class GoogleSignInCubit extends Cubit<GoogleSignInState> {
       AppLogger.error("General Exception", e);
       emit(GoogleSignInFailure(AppExceptions(e.message).message));
     } catch (e, stackTrace) {
+      final errStr = e.toString();
+      if (errStr.contains('popup_closed') || errStr.contains('cancelled')) {
+        emit(GoogleSignInInitial());
+        return;
+      }
       AppLogger.error("An error occurred", e);
       AppLogger.error(stackTrace.toString());
-      emit(GoogleSignInFailure(e.toString()));
+      emit(GoogleSignInFailure(errStr));
     }
   }
 }

@@ -11,11 +11,11 @@ class AppStrings {
 // -- OnBoarding SubTitles
   static const String onBoardingSubTitle1 =
       "You can easily manage all of your daily ";
-  static const String onBoardingSubTitle2 = "In Uptodo  you can create your ";
+  static const String onBoardingSubTitle2 = "In Colliq-Team you can create your ";
   static const String onBoardingSubTitle3 =
       "You can organize your daily tasks by ";
 // -- OnBoarding SubTitles2
-  static const String onBoardingSubTitle1_1 = "tasks in DoMe for free";
+  static const String onBoardingSubTitle1_1 = "tasks in Colliq-Team for free";
   static const String onBoardingSubTitle2_2 =
       "personalized routine to stay productive";
   static const String onBoardingSubTitle3_3 =
@@ -34,7 +34,7 @@ class AppStrings {
 // -- Welcome Texts
 // getStarted
   static const String getStarted = "Get Started";
-  static const String welcomeTitle = "Welcome to UpTodo";
+  static const String welcomeTitle = "Welcome to Colliq-Team";
 
   static const String welcomeSubTitle =
       "Please login to your account or create new account to continue";

@@ -142,6 +142,13 @@ class ProfileView extends StatelessWidget {
 
                   // Action list
                   _menuItem(
+                    icon: Iconsax.people,
+                    title: 'My Teams',
+                    onTap: () {
+                      Navigator.pushNamed(context, Routes.teamsHub);
+                    },
+                  ),
+                  _menuItem(
                     icon: Iconsax.setting_2,
                     title: 'App Settings',
                     onTap: () {

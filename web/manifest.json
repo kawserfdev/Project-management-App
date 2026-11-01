@@ -1,6 +1,6 @@
 {
-    "name": "UpTodo Task Manager",
-    "short_name": "UpTodo",
+    "name": "Colliq-Team Task Manager",
+    "short_name": "Colliq-Team",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#121212",

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:task_manager_app/core/constants/app_colors.dart';
+import 'package:task_manager_app/core/routes/routes.dart';
 import 'package:task_manager_app/core/services/session_manager.dart';
 import 'package:task_manager_app/core/utils/responsive.dart';
 import 'package:task_manager_app/features/calender/presentation/views/calender_view.dart';
@@ -384,6 +385,13 @@ class _HomeViewContentState extends State<_HomeViewContent> {
             label: 'Profile & Settings',
             isSelected: activeIndex == 3,
             onTap: () => navCubit.navigateTo(3),
+          ),
+          _desktopNavTile(
+            icon: Iconsax.people,
+            activeIcon: Iconsax.people5,
+            label: 'My Teams',
+            isSelected: false,
+            onTap: () => Navigator.pushNamed(context, Routes.teamsHub),
           ),
 
           const Spacer(),

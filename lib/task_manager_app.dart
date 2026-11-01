@@ -103,7 +103,7 @@ class TaskManagerApp extends StatelessWidget {
               return MaterialApp(
                 debugShowCheckedModeBanner: false,
                 scrollBehavior: const AppScrollBehavior(),
-                title: 'UpTodo - Task Manager',
+                title: 'Colliq-Team - Task Manager',
                 theme: ThemeData.dark().copyWith(
                   scaffoldBackgroundColor: AppColors.darkBlue,
                   colorScheme: const ColorScheme.dark(

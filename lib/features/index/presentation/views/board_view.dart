@@ -394,11 +394,38 @@ class _BoardViewState extends State<BoardView> {
             child: Row(
               children: [
                 if (task.dueDate != null) ...[
-                  const Icon(Iconsax.calendar_1, size: 12, color: AppColors.lightGrey),
-                  SizedBox(width: 4.w),
-                  Text(
-                    DateFormat('MMM d').format(task.dueDate!),
-                    style: TextStyle(color: AppColors.lightGrey, fontSize: 10.sp),
+                  Builder(
+                    builder: (_) {
+                      final now = DateTime.now();
+                      final isOverdue = !task.isCompleted && now.isAfter(task.dueDate!);
+                      final isDeadlineMet = task.isCompleted;
+                      final deadlineColor = isDeadlineMet
+                          ? const Color(0xFF22C55E) // Green: deadline met
+                          : (isOverdue
+                              ? const Color(0xFFEF4444) // Red: deadline surpassed
+                              : AppColors.lightGrey);
+                      return Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            isDeadlineMet
+                                ? Icons.check_circle_outline_rounded
+                                : (isOverdue ? Icons.warning_amber_rounded : Iconsax.calendar_1),
+                            size: 12,
+                            color: deadlineColor,
+                          ),
+                          SizedBox(width: 4.w),
+                          Text(
+                            DateFormat('MMM d').format(task.dueDate!),
+                            style: TextStyle(
+                              color: deadlineColor,
+                              fontSize: 10.sp,
+                              fontWeight: isOverdue || isDeadlineMet ? FontWeight.bold : FontWeight.normal,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                   SizedBox(width: 8.w),
                 ],

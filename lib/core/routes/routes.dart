@@ -9,6 +9,9 @@ import 'package:task_manager_app/features/profile/presentation/views/settings_vi
 import 'package:task_manager_app/features/task/data/models/task_model.dart';
 import 'package:task_manager_app/features/task/presentation/views/add_task_category_view.dart';
 import 'package:task_manager_app/features/task/presentation/views/edit_task_view.dart';
+import 'package:task_manager_app/features/team/data/models/team_model.dart';
+import 'package:task_manager_app/features/team/presentation/views/team_detail_view.dart';
+import 'package:task_manager_app/features/team/presentation/views/teams_hub_view.dart';
 
 class Routes {
   static const String onboarding = '/onboarding_view';
@@ -20,11 +23,17 @@ class Routes {
   static const String addTaskView = '/add_task_view';
   static const String editTaskView = '/edit_task_view';
   static const String addTaskCategoryView = '/add_task_category_view';
+  static const String teamsHub = '/teams_hub';
+  static const String teamDetail = '/team_detail';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     final args = settings.arguments;
+    final rawName = settings.name ?? '';
+    final uri = Uri.tryParse(rawName);
+    final routePath = (uri?.path.isNotEmpty == true) ? uri!.path : rawName;
+    final normalized = routePath.startsWith('/') ? routePath : '/$routePath';
 
-    switch (settings.name) {
+    switch (normalized) {
       case onboarding:
         return MaterialPageRoute(builder: (_) => const OnboardingView());
 
@@ -40,6 +49,23 @@ class Routes {
 
       case addTaskCategoryView:
         return MaterialPageRoute(builder: (_) => const AddTaskCategoryView());
+
+      case teamsHub:
+        return MaterialPageRoute(builder: (_) => const TeamsHubView());
+
+      case teamDetail:
+        if (args is Map) {
+          final team = args['team'] as TeamModel;
+          final role = args['role'] as TeamRole? ?? TeamRole.member;
+          return MaterialPageRoute(
+            builder: (_) => TeamDetailView(team: team, myRole: role),
+          );
+        } else if (args is TeamModel) {
+          return MaterialPageRoute(
+            builder: (_) => TeamDetailView(team: args, myRole: TeamRole.member),
+          );
+        }
+        return MaterialPageRoute(builder: (_) => const TeamsHubView());
 
       case editTaskView:
         if (args is TaskModel) {

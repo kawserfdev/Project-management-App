@@ -15,6 +15,9 @@ import 'package:task_manager_app/features/task/data/datasources/task_local_data_
 import 'package:task_manager_app/features/task/data/datasources/task_remote_data_source.dart';
 import 'package:task_manager_app/features/task/data/repos/task_repository.dart';
 import 'package:task_manager_app/features/task/presentation/manager/task_cubit.dart';
+import 'package:task_manager_app/features/team/data/datasources/team_remote_data_source.dart';
+import 'package:task_manager_app/features/team/data/repos/team_repository.dart';
+import 'package:task_manager_app/features/team/presentation/manager/team_cubit.dart';
 
 final getIt = GetIt.instance;
 
@@ -49,7 +52,7 @@ Future<void> setupServiceLocator() async {
   getIt.registerLazySingleton<GoogleSignIn>(
     () => GoogleSignIn(
       clientId: kIsWeb
-          ? '959053640502-j0scjr697o0i51sf0vujr3h539q95di4.apps.googleusercontent.com'
+          ? '959053640502-2t7vfpl3fsfq3g3hqpj9n7tltplal3d2.apps.googleusercontent.com'
           : null,
     ),
   );
@@ -67,4 +70,12 @@ Future<void> setupServiceLocator() async {
   getIt.registerFactory<NavigationCubit>(() => NavigationCubit());
   getIt.registerLazySingleton<TaskCubit>(
       () => TaskCubit(taskRepository: getIt<TaskRepository>())..init());
+
+  // Register Team Data Source, Repository & Cubit
+  getIt.registerLazySingleton<TeamRemoteDataSource>(
+      () => TeamRemoteDataSourceImpl());
+  getIt.registerLazySingleton<TeamRepository>(
+      () => TeamRepositoryImpl(remote: getIt<TeamRemoteDataSource>()));
+  getIt.registerFactory<TeamCubit>(
+      () => TeamCubit(repository: getIt<TeamRepository>()));
 }

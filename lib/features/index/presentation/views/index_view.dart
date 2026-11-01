@@ -853,28 +853,77 @@ class _IndexViewState extends State<IndexView> {
                             ),
                             SizedBox(width: 6.w),
 
-                            // 4. Due Date badge
+                            // 4. Due Date badge (Color-coded: Green if met, Red if overdue)
                             if (task.dueDate != null) ...[
-                              Container(
-                                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
-                                decoration: BoxDecoration(
-                                  color: AppColors.darkBlue,
-                                  borderRadius: BorderRadius.circular(6.r),
-                                  border: Border.all(color: Colors.white.withValues(alpha: 0.08), width: 0.8),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(Iconsax.calendar_1, size: 11, color: AppColors.lightGrey),
-                                    SizedBox(width: 4.w),
-                                    Text(
-                                      task.dueTime != null
-                                          ? '${DateFormat('MMM dd').format(task.dueDate!)}, ${task.dueTime}'
-                                          : DateFormat('MMM dd').format(task.dueDate!),
-                                      style: TextStyle(color: AppColors.lightGrey, fontSize: 11.sp),
+                              Builder(
+                                builder: (_) {
+                                  final now = DateTime.now();
+                                  final isOverdue = !task.isCompleted && now.isAfter(task.dueDate!);
+                                  final isDeadlineMet = task.isCompleted;
+                                  final deadlineColor = isDeadlineMet
+                                      ? const Color(0xFF22C55E) // Green: deadline met
+                                      : (isOverdue
+                                          ? const Color(0xFFEF4444) // Red: deadline surpassed
+                                          : AppColors.lightGrey);
+                                  final deadlineBg = isDeadlineMet
+                                      ? const Color(0xFF22C55E).withValues(alpha: 0.15)
+                                      : (isOverdue
+                                          ? const Color(0xFFEF4444).withValues(alpha: 0.15)
+                                          : AppColors.darkBlue);
+
+                                  return Container(
+                                    padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+                                    decoration: BoxDecoration(
+                                      color: deadlineBg,
+                                      borderRadius: BorderRadius.circular(6.r),
+                                      border: Border.all(color: deadlineColor.withValues(alpha: 0.4), width: 0.8),
                                     ),
-                                  ],
-                                ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          isDeadlineMet
+                                              ? Icons.check_circle_outline_rounded
+                                              : (isOverdue ? Icons.warning_amber_rounded : Iconsax.calendar_1),
+                                          size: 11,
+                                          color: deadlineColor,
+                                        ),
+                                        SizedBox(width: 4.w),
+                                        Text(
+                                          task.dueTime != null
+                                              ? '${DateFormat('MMM dd').format(task.dueDate!)}, ${task.dueTime}'
+                                              : DateFormat('MMM dd').format(task.dueDate!),
+                                          style: TextStyle(
+                                            color: deadlineColor,
+                                            fontSize: 11.sp,
+                                            fontWeight: isOverdue || isDeadlineMet ? FontWeight.bold : FontWeight.normal,
+                                          ),
+                                        ),
+                                        if (isOverdue) ...[
+                                          SizedBox(width: 4.w),
+                                          Text(
+                                            '(Overdue)',
+                                            style: TextStyle(
+                                              color: deadlineColor,
+                                              fontSize: 10.sp,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ] else if (isDeadlineMet) ...[
+                                          SizedBox(width: 4.w),
+                                          Text(
+                                            '(Done)',
+                                            style: TextStyle(
+                                              color: deadlineColor,
+                                              fontSize: 10.sp,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  );
+                                },
                               ),
                               SizedBox(width: 6.w),
                             ],
