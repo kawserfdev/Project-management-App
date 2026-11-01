@@ -100,17 +100,23 @@ class _CreateTeamSheetState extends State<CreateTeamSheet> {
       },
       builder: (context, state) {
         final isLoading = state is TeamLoading;
-        return Container(
-          decoration: BoxDecoration(
-            color: AppColors.textFieldBackgroundColor,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-          ),
-          padding: EdgeInsets.fromLTRB(
-              20.w, 16.h, 20.w, MediaQuery.of(context).viewInsets.bottom + 20.h),
-          child: Form(
-            key: _formKey,
-            child: SingleChildScrollView(
-              child: Column(
+        final isWide = MediaQuery.of(context).size.width >= 650;
+        return Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 580),
+            child: Container(
+              decoration: BoxDecoration(
+                color: AppColors.textFieldBackgroundColor,
+                borderRadius: isWide
+                    ? BorderRadius.circular(20.r)
+                    : BorderRadius.vertical(top: Radius.circular(20.r)),
+              ),
+              padding: EdgeInsets.fromLTRB(
+                  20.w, 16.h, 20.w, MediaQuery.viewInsetsOf(context).bottom + 20.h),
+              child: Form(
+                key: _formKey,
+                child: SingleChildScrollView(
+                  child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -312,9 +318,11 @@ class _CreateTeamSheetState extends State<CreateTeamSheet> {
               ),
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
+  },
+);
   }
 }
 

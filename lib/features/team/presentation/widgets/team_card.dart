@@ -7,12 +7,14 @@ class TeamCard extends StatelessWidget {
   final TeamModel team;
   final TeamRole myRole;
   final VoidCallback onTap;
+  final EdgeInsetsGeometry? margin;
 
   const TeamCard({
     super.key,
     required this.team,
     required this.myRole,
     required this.onTap,
+    this.margin,
   });
 
   @override
@@ -21,7 +23,7 @@ class TeamCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
+        margin: margin ?? EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
         padding: EdgeInsets.all(16.r),
         decoration: BoxDecoration(
           color: AppColors.textFieldBackgroundColor,

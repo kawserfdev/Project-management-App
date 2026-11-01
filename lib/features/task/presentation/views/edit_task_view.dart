@@ -5,11 +5,14 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:intl/intl.dart';
 import 'package:task_manager_app/core/constants/app_colors.dart';
+import 'package:task_manager_app/core/di/service_locator.dart';
 import 'package:task_manager_app/core/themes/app_text_themes.dart';
 import 'package:task_manager_app/features/task/data/models/task_model.dart';
 import 'package:task_manager_app/features/task/presentation/manager/task_cubit.dart';
 import 'package:task_manager_app/features/task/presentation/manager/task_state.dart';
 import 'package:task_manager_app/features/task/presentation/widgets/assignee_picker_dialog.dart';
+import 'package:task_manager_app/features/team/data/models/team_model.dart';
+import 'package:task_manager_app/features/team/data/repos/team_repository.dart';
 
 class EditTaskView extends StatefulWidget {
   final TaskModel task;
@@ -33,6 +36,10 @@ class _EditTaskViewState extends State<EditTaskView> {
   final _subtaskController = TextEditingController();
   final _commentController = TextEditingController();
 
+  String? _selectedTeamId;
+  String? _selectedTeamName;
+  List<TeamModel> _availableTeams = [];
+
   @override
   void initState() {
     super.initState();
@@ -46,6 +53,18 @@ class _EditTaskViewState extends State<EditTaskView> {
     _selectedTime = widget.task.dueTime;
     _subtasks = List.from(widget.task.subtasks);
     _comments = List.from(widget.task.comments);
+    _selectedTeamId = widget.task.teamId;
+    _selectedTeamName = widget.task.teamName;
+    _loadAvailableTeams();
+  }
+
+  Future<void> _loadAvailableTeams() async {
+    try {
+      final teams = await getIt<TeamRepository>().getMyTeams();
+      if (mounted) {
+        setState(() => _availableTeams = teams);
+      }
+    } catch (_) {}
   }
 
   @override
@@ -68,6 +87,23 @@ class _EditTaskViewState extends State<EditTaskView> {
     }
 
     final isDone = _selectedStatus == 'completed' || _selectedStatus == 'done';
+    final List<TaskStatusLog> logs = List.from(widget.task.statusLogs);
+    if (_selectedStatus != widget.task.status) {
+      final user = FirebaseAuth.instance.currentUser;
+      final authorName = (user?.displayName != null && user!.displayName!.isNotEmpty)
+          ? user.displayName!
+          : (user?.email?.split('@').first ?? 'User');
+      logs.add(
+        TaskStatusLog(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          fromStatus: widget.task.status,
+          toStatus: _selectedStatus,
+          updatedBy: authorName,
+          timestamp: DateTime.now(),
+        ),
+      );
+    }
+
     final updated = widget.task.copyWith(
       title: title,
       description: _descController.text.trim(),
@@ -79,6 +115,9 @@ class _EditTaskViewState extends State<EditTaskView> {
       dueTime: _selectedTime,
       subtasks: _subtasks,
       comments: _comments,
+      statusLogs: logs,
+      teamId: _selectedTeamId,
+      teamName: _selectedTeamName,
       assignedTo: _assigneeController.text.trim().isEmpty ? null : _assigneeController.text.trim(),
     );
 
@@ -446,6 +485,66 @@ class _EditTaskViewState extends State<EditTaskView> {
                   ),
                 ),
               ),
+              SizedBox(height: 16.h),
+
+              // Team / Project Assignment Selector
+              Text('Project / Team', style: AppTextThemes.font16WhiteRegular),
+              SizedBox(height: 8.h),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 14.w),
+                decoration: BoxDecoration(
+                  color: AppColors.textFieldBackgroundColor,
+                  borderRadius: BorderRadius.circular(8.r),
+                  border: Border.all(
+                    color: _selectedTeamId != null
+                        ? AppColors.primaryColor.withValues(alpha: 0.4)
+                        : Colors.transparent,
+                  ),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String?>(
+                    value: _selectedTeamId,
+                    hint: Row(
+                      children: [
+                        const Icon(Iconsax.people, color: AppColors.lightGrey, size: 18),
+                        SizedBox(width: 8.w),
+                        const Text('Personal (No Team)', style: TextStyle(color: AppColors.lightGrey)),
+                      ],
+                    ),
+                    dropdownColor: AppColors.textFieldBackgroundColor,
+                    isExpanded: true,
+                    items: [
+                      const DropdownMenuItem<String?>(
+                        value: null,
+                        child: Text('Personal (No Team)', style: TextStyle(color: AppColors.lightGrey)),
+                      ),
+                      ..._availableTeams.map((team) {
+                        return DropdownMenuItem<String?>(
+                          value: team.id,
+                          child: Row(
+                            children: [
+                              Icon(team.icon, color: team.color, size: 18),
+                              SizedBox(width: 8.w),
+                              Text(team.name, style: const TextStyle(color: Colors.white)),
+                            ],
+                          ),
+                        );
+                      }),
+                    ],
+                    onChanged: (val) {
+                      setState(() {
+                        _selectedTeamId = val;
+                        if (val == null) {
+                          _selectedTeamName = null;
+                        } else {
+                          final found = _availableTeams.firstWhere((t) => t.id == val, orElse: () => _availableTeams.first);
+                          _selectedTeamName = found.name;
+                        }
+                      });
+                    },
+                  ),
+                ),
+              ),
               SizedBox(height: 20.h),
 
               // Subtasks Section
@@ -606,6 +705,75 @@ class _EditTaskViewState extends State<EditTaskView> {
                         Text(
                           comm.message,
                           style: const TextStyle(color: Colors.white, fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+
+              // Status Update Logs / Activity History
+              SizedBox(height: 24.h),
+              Row(
+                children: [
+                  const Icon(Icons.history_rounded, color: AppColors.primaryColor, size: 20),
+                  SizedBox(width: 8.w),
+                  Text('Status Update Logs (${widget.task.statusLogs.length})', style: AppTextThemes.font16WhiteRegular),
+                ],
+              ),
+              SizedBox(height: 8.h),
+              if (widget.task.statusLogs.isEmpty)
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+                  decoration: BoxDecoration(
+                    color: AppColors.textFieldBackgroundColor,
+                    borderRadius: BorderRadius.circular(8.r),
+                  ),
+                  child: const Text('No status transitions recorded yet.', style: TextStyle(color: AppColors.lightGrey, fontSize: 12)),
+                )
+              else
+                ...widget.task.statusLogs.reversed.map((log) {
+                  return Container(
+                    margin: EdgeInsets.only(bottom: 8.h),
+                    padding: EdgeInsets.all(12.w),
+                    decoration: BoxDecoration(
+                      color: AppColors.textFieldBackgroundColor,
+                      borderRadius: BorderRadius.circular(8.r),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.swap_horiz_rounded, color: AppColors.primaryColor, size: 18),
+                        SizedBox(width: 10.w),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    TaskStatus.getLabel(log.fromStatus),
+                                    style: const TextStyle(color: AppColors.lightGrey, fontSize: 11),
+                                  ),
+                                  const Text(' ➔ ', style: TextStyle(color: AppColors.primaryColor, fontSize: 12, fontWeight: FontWeight.bold)),
+                                  Text(
+                                    TaskStatus.getLabel(log.toStatus),
+                                    style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 2.h),
+                              Text(
+                                'Updated by ${log.updatedBy}',
+                                style: const TextStyle(color: AppColors.lightGrey, fontSize: 10),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Text(
+                          DateFormat('MMM dd, hh:mm a').format(log.timestamp),
+                          style: const TextStyle(color: AppColors.lightGrey, fontSize: 10),
                         ),
                       ],
                     ),

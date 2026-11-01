@@ -9,6 +9,12 @@ abstract class TaskRemoteDataSource {
   Future<void> updateTask(TaskModel task, String userId);
   Future<void> deleteTask(String taskId, String userId);
 
+  // --- TEAM TASKS ---
+  Future<List<TaskModel>> getTeamTasks(String teamId);
+  Future<void> saveTeamTask(String teamId, TaskModel task);
+  Future<void> deleteTeamTask(String teamId, String taskId);
+  Future<List<String>> getUserTeamIds(String userId);
+
   Future<List<WorkspaceModel>> getWorkspaces(String userId);
   Future<void> saveWorkspace(WorkspaceModel workspace, String userId);
 
@@ -95,6 +101,66 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
       await fs
           .collection('users')
           .doc(userId)
+          .collection('tasks')
+          .doc(taskId)
+          .delete();
+    } catch (_) {}
+  }
+
+  // --- TEAM TASKS ---
+  @override
+  Future<List<String>> getUserTeamIds(String userId) async {
+    final fs = _safeFirestore;
+    if (fs == null || userId.isEmpty) return [];
+    try {
+      final snap = await fs
+          .collection('teams')
+          .where('memberUids', arrayContains: userId)
+          .get();
+      return snap.docs.map((d) => d.id).toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  @override
+  Future<List<TaskModel>> getTeamTasks(String teamId) async {
+    final fs = _safeFirestore;
+    if (fs == null || teamId.isEmpty) return [];
+    try {
+      final snap = await fs
+          .collection('teams')
+          .doc(teamId)
+          .collection('tasks')
+          .get();
+      return snap.docs.map((d) => TaskModel.fromMap(d.data())).toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  @override
+  Future<void> saveTeamTask(String teamId, TaskModel task) async {
+    final fs = _safeFirestore;
+    if (fs == null || teamId.isEmpty) return;
+    try {
+      await fs
+          .collection('teams')
+          .doc(teamId)
+          .collection('tasks')
+          .doc(task.id)
+          .set(task.toMap(), SetOptions(merge: true));
+    } catch (_) {}
+  }
+
+  @override
+  Future<void> deleteTeamTask(String teamId, String taskId) async {
+    final fs = _safeFirestore;
+    if (fs == null || teamId.isEmpty) return;
+    try {
+      await fs
+          .collection('teams')
+          .doc(teamId)
           .collection('tasks')
           .doc(taskId)
           .delete();

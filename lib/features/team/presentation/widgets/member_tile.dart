@@ -10,6 +10,7 @@ class MemberTile extends StatelessWidget {
   final bool isCurrentUserOwner;
   final VoidCallback? onRemove;
   final ValueChanged<TeamRole>? onChangeRole;
+  final EdgeInsetsGeometry? margin;
 
   const MemberTile({
     super.key,
@@ -17,6 +18,7 @@ class MemberTile extends StatelessWidget {
     this.isCurrentUserOwner = false,
     this.onRemove,
     this.onChangeRole,
+    this.margin,
   });
 
   Color get _roleColor {
@@ -35,12 +37,13 @@ class MemberTile extends StatelessWidget {
     final isMe = member.uid == FirebaseAuth.instance.currentUser?.uid;
 
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
-      decoration: BoxDecoration(
+      margin: margin ?? EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
+      child: Material(
         color: AppColors.textFieldBackgroundColor,
         borderRadius: BorderRadius.circular(10.r),
-      ),
-      child: ListTile(
+        child: ListTile(
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10.r)),
         leading: CircleAvatar(
           radius: 20.r,
           backgroundColor: AppColors.primaryColor.withValues(alpha: 0.2),
@@ -147,7 +150,8 @@ class MemberTile extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
 

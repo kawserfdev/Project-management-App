@@ -14,7 +14,16 @@ import 'package:task_manager_app/features/task/presentation/manager/task_state.d
 import 'package:task_manager_app/features/task/presentation/widgets/assignee_picker_dialog.dart';
 
 class AddTaskForm extends StatefulWidget {
-  const AddTaskForm({super.key});
+  final String? initialTeamId;
+  final String? initialTeamName;
+  final String? initialAssignee;
+
+  const AddTaskForm({
+    super.key,
+    this.initialTeamId,
+    this.initialTeamName,
+    this.initialAssignee,
+  });
 
   @override
   State<AddTaskForm> createState() => _AddTaskFormState();
@@ -31,6 +40,16 @@ class _AddTaskFormState extends State<AddTaskForm> {
   int _selectedPriority = 2; // Default Medium
   String _selectedStatus = 'pending'; // Default Started / Pending
   String? _selectedAssignee;
+  String? _selectedTeamId;
+  String? _selectedTeamName;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedAssignee = widget.initialAssignee;
+    _selectedTeamId = widget.initialTeamId;
+    _selectedTeamName = widget.initialTeamName;
+  }
 
   @override
   void dispose() {
@@ -57,6 +76,8 @@ class _AddTaskFormState extends State<AddTaskForm> {
       dueDate: _selectedDate ?? DateTime.now(),
       dueTime: _selectedTime ?? DateFormat('hh:mm a').format(DateTime.now()),
       assignedTo: _selectedAssignee,
+      teamId: _selectedTeamId,
+      teamName: _selectedTeamName,
       status: _selectedStatus,
       isCompleted: _selectedStatus == 'completed',
       createdAt: DateTime.now(),

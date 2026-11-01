@@ -3,7 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:intl/intl.dart';
 import 'package:task_manager_app/core/constants/app_colors.dart';
+import 'package:task_manager_app/core/routes/routes.dart';
+import 'package:task_manager_app/features/home/presentation/widgets/add_task_form.dart';
+import 'package:task_manager_app/features/task/data/models/task_model.dart';
+import 'package:task_manager_app/features/task/presentation/manager/task_cubit.dart';
+import 'package:task_manager_app/features/task/presentation/manager/task_state.dart';
 import 'package:task_manager_app/features/team/data/models/team_member_model.dart';
 import 'package:task_manager_app/features/team/data/models/team_model.dart';
 import 'package:task_manager_app/features/team/presentation/manager/team_cubit.dart';
@@ -32,7 +38,7 @@ class _TeamDetailViewState extends State<TeamDetailView>
   @override
   void initState() {
     super.initState();
-    _tabCtrl = TabController(length: 2, vsync: this);
+    _tabCtrl = TabController(length: 3, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<TeamCubit>().loadTeamDetail(widget.team);
     });
@@ -118,193 +124,221 @@ class _TeamDetailViewState extends State<TeamDetailView>
     final descCtrl = TextEditingController(text: team.description);
     int selectedIcon = team.iconCode;
     int selectedColor = team.colorValue;
+    final isWide = MediaQuery.of(context).size.width >= 650;
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (sheetCtx) => StatefulBuilder(
-        builder: (ctx, setSheetState) => Container(
-          decoration: BoxDecoration(
-            color: AppColors.textFieldBackgroundColor,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-          ),
-          padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w,
-              MediaQuery.of(context).viewInsets.bottom + 20.h),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40.w,
-                    height: 4.h,
-                    decoration: BoxDecoration(
-                        color: AppColors.lightGrey.withValues(alpha: 0.4),
-                        borderRadius: BorderRadius.circular(2.r)),
-                  ),
-                ),
-                SizedBox(height: 16.h),
-                Text('Edit Team',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18.sp,
-                        fontWeight: FontWeight.bold)),
-                SizedBox(height: 20.h),
-                TextField(
-                  controller: nameCtrl,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    labelText: 'Team Name',
-                    labelStyle:
-                        const TextStyle(color: AppColors.lightGrey),
-                    filled: true,
-                    fillColor: AppColors.darkBlue,
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10.r)),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.r),
-                      borderSide: const BorderSide(
-                          color: AppColors.primaryColor),
+    Widget buildSheetContent(BuildContext ctx, StateSetter setSheetState, VoidCallback onSave) {
+      return Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 580),
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.textFieldBackgroundColor,
+              borderRadius: isWide
+                  ? BorderRadius.circular(20.r)
+                  : BorderRadius.vertical(top: Radius.circular(20.r)),
+            ),
+            padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w,
+                MediaQuery.viewInsetsOf(ctx).bottom + 20.h),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40.w,
+                      height: 4.h,
+                      decoration: BoxDecoration(
+                          color: AppColors.lightGrey.withValues(alpha: 0.4),
+                          borderRadius: BorderRadius.circular(2.r)),
                     ),
                   ),
-                ),
-                SizedBox(height: 12.h),
-                TextField(
-                  controller: descCtrl,
-                  maxLines: 2,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    labelText: 'Description',
-                    labelStyle:
-                        const TextStyle(color: AppColors.lightGrey),
-                    filled: true,
-                    fillColor: AppColors.darkBlue,
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10.r)),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.r),
-                      borderSide: const BorderSide(
-                          color: AppColors.primaryColor),
+                  SizedBox(height: 16.h),
+                  Text('Edit Team',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18.sp,
+                          fontWeight: FontWeight.bold)),
+                  SizedBox(height: 20.h),
+                  TextField(
+                    controller: nameCtrl,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      labelText: 'Team Name',
+                      labelStyle:
+                          const TextStyle(color: AppColors.lightGrey),
+                      filled: true,
+                      fillColor: AppColors.darkBlue,
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10.r)),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10.r),
+                        borderSide: const BorderSide(
+                            color: AppColors.primaryColor),
+                      ),
                     ),
                   ),
-                ),
-                SizedBox(height: 14.h),
-                Text('Icon',
-                    style: TextStyle(
-                        color: AppColors.lightGrey, fontSize: 13.sp)),
-                SizedBox(height: 8.h),
-                SizedBox(
-                  height: 52.h,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: TeamModel.availableIcons.map((item) {
-                      final code = item['code'] as int;
-                      final icon = item['icon'] as IconData;
-                      final selected = selectedIcon == code;
+                  SizedBox(height: 12.h),
+                  TextField(
+                    controller: descCtrl,
+                    maxLines: 2,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      labelText: 'Description',
+                      labelStyle:
+                          const TextStyle(color: AppColors.lightGrey),
+                      filled: true,
+                      fillColor: AppColors.darkBlue,
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10.r)),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10.r),
+                        borderSide: const BorderSide(
+                            color: AppColors.primaryColor),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 14.h),
+                  Text('Icon',
+                      style: TextStyle(
+                          color: AppColors.lightGrey, fontSize: 13.sp)),
+                  SizedBox(height: 8.h),
+                  SizedBox(
+                    height: 52.h,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children: TeamModel.availableIcons.map((item) {
+                        final code = item['code'] as int;
+                        final icon = item['icon'] as IconData;
+                        final selected = selectedIcon == code;
+                        return GestureDetector(
+                          onTap: () =>
+                              setSheetState(() => selectedIcon = code),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 150),
+                            margin: EdgeInsets.only(right: 8.w),
+                            width: 48.w,
+                            height: 48.h,
+                            decoration: BoxDecoration(
+                              color: selected
+                                  ? AppColors.primaryColor
+                                      .withValues(alpha: 0.2)
+                                  : AppColors.darkBlue,
+                              borderRadius: BorderRadius.circular(10.r),
+                              border: Border.all(
+                                color: selected
+                                    ? AppColors.primaryColor
+                                    : AppColors.dividerColor
+                                        .withValues(alpha: 0.4),
+                              ),
+                            ),
+                            child: Icon(icon,
+                                color: selected
+                                    ? AppColors.primaryColor
+                                    : AppColors.lightGrey,
+                                size: 22.r),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                  SizedBox(height: 14.h),
+                  Text('Color',
+                      style: TextStyle(
+                          color: AppColors.lightGrey, fontSize: 13.sp)),
+                  SizedBox(height: 8.h),
+                  Row(
+                    children: TeamModel.availableColors.map((c) {
+                      final val = c.toARGB32();
+                      final selected = selectedColor == val;
                       return GestureDetector(
                         onTap: () =>
-                            setSheetState(() => selectedIcon = code),
+                            setSheetState(() => selectedColor = val),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 150),
-                          margin: EdgeInsets.only(right: 8.w),
-                          width: 48.w,
-                          height: 48.h,
+                          margin: EdgeInsets.only(right: 10.w),
+                          width: 30.w,
+                          height: 30.w,
                           decoration: BoxDecoration(
-                            color: selected
-                                ? AppColors.primaryColor
-                                    .withValues(alpha: 0.2)
-                                : AppColors.darkBlue,
-                            borderRadius: BorderRadius.circular(10.r),
+                            color: c,
+                            shape: BoxShape.circle,
                             border: Border.all(
                               color: selected
-                                  ? AppColors.primaryColor
-                                  : AppColors.dividerColor
-                                      .withValues(alpha: 0.4),
+                                  ? Colors.white
+                                  : Colors.transparent,
+                              width: 2.5,
                             ),
                           ),
-                          child: Icon(icon,
-                              color: selected
-                                  ? AppColors.primaryColor
-                                  : AppColors.lightGrey,
-                              size: 22.r),
+                          child: selected
+                              ? const Icon(Icons.check,
+                                  color: Colors.white, size: 16)
+                              : null,
                         ),
                       );
                     }).toList(),
                   ),
-                ),
-                SizedBox(height: 14.h),
-                Text('Color',
-                    style: TextStyle(
-                        color: AppColors.lightGrey, fontSize: 13.sp)),
-                SizedBox(height: 8.h),
-                Row(
-                  children: TeamModel.availableColors.map((c) {
-                    final val = c.toARGB32();
-                    final selected = selectedColor == val;
-                    return GestureDetector(
-                      onTap: () =>
-                          setSheetState(() => selectedColor = val),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 150),
-                        margin: EdgeInsets.only(right: 10.w),
-                        width: 30.w,
-                        height: 30.w,
-                        decoration: BoxDecoration(
-                          color: c,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: selected
-                                ? Colors.white
-                                : Colors.transparent,
-                            width: 2.5,
-                          ),
-                        ),
-                        child: selected
-                            ? const Icon(Icons.check,
-                                color: Colors.white, size: 16)
-                            : null,
+                  SizedBox(height: 24.h),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50.h,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryColor,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12.r)),
                       ),
-                    );
-                  }).toList(),
-                ),
-                SizedBox(height: 24.h),
-                SizedBox(
-                  width: double.infinity,
-                  height: 50.h,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryColor,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.r)),
+                      onPressed: onSave,
+                      child: Text('Save Changes',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.bold)),
                     ),
-                    onPressed: () {
-                      final updated = team.copyWith(
-                        name: nameCtrl.text.trim().isEmpty
-                            ? team.name
-                            : nameCtrl.text.trim(),
-                        description: descCtrl.text.trim(),
-                        iconCode: selectedIcon,
-                        colorValue: selectedColor,
-                      );
-                      debugPrint('⚙️ [TeamDetailView] Save changes: "${updated.name}"');
-                      context.read<TeamCubit>().updateTeam(updated);
-                      Navigator.pop(sheetCtx);
-                    },
-                    child: Text('Save Changes',
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.bold)),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
-      ),
-    );
+      );
+    }
+
+    void handleSave(BuildContext closeCtx) {
+      final updated = team.copyWith(
+        name: nameCtrl.text.trim().isEmpty
+            ? team.name
+            : nameCtrl.text.trim(),
+        description: descCtrl.text.trim(),
+        iconCode: selectedIcon,
+        colorValue: selectedColor,
+      );
+      debugPrint('⚙️ [TeamDetailView] Save changes: "${updated.name}"');
+      context.read<TeamCubit>().updateTeam(updated);
+      Navigator.pop(closeCtx);
+    }
+
+    if (isWide) {
+      showDialog(
+        context: context,
+        builder: (dialogCtx) => StatefulBuilder(
+          builder: (ctx, setSheetState) => Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+            child: buildSheetContent(ctx, setSheetState, () => handleSave(dialogCtx)),
+          ),
+        ),
+      );
+    } else {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (sheetCtx) => StatefulBuilder(
+          builder: (ctx, setSheetState) =>
+              buildSheetContent(ctx, setSheetState, () => handleSave(sheetCtx)),
+        ),
+      );
+    }
   }
 
   @override
@@ -363,32 +397,43 @@ class _TeamDetailViewState extends State<TeamDetailView>
               unselectedLabelColor: AppColors.lightGrey,
               tabs: const [
                 Tab(text: 'Members'),
+                Tab(text: 'Tasks'),
                 Tab(text: 'Settings'),
               ],
             ),
           ),
-          body: state is TeamLoading
-              ? const Center(
-                  child: CircularProgressIndicator(
-                      color: AppColors.primaryColor))
-              : TabBarView(
-                  controller: _tabCtrl,
-                  children: [
-                    _MembersTab(
-                      team: team,
-                      members: members,
-                      isOwner: _isOwner,
-                      isOwnerOrAdmin: _isOwnerOrAdmin,
-                      currentUid: currentUid,
+          body: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1150),
+              child: state is TeamLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                          color: AppColors.primaryColor))
+                  : TabBarView(
+                      controller: _tabCtrl,
+                      children: [
+                        _MembersTab(
+                          team: team,
+                          members: members,
+                          isOwner: _isOwner,
+                          isOwnerOrAdmin: _isOwnerOrAdmin,
+                          currentUid: currentUid,
+                        ),
+                        _TeamTasksTab(
+                          team: team,
+                          members: members,
+                          isOwnerOrAdmin: _isOwnerOrAdmin,
+                        ),
+                        _SettingsTab(
+                          team: team,
+                          isOwner: _isOwner,
+                          onLeave: () => _confirmLeave(context, team),
+                          onDelete: () => _confirmDelete(context, team),
+                        ),
+                      ],
                     ),
-                    _SettingsTab(
-                      team: team,
-                      isOwner: _isOwner,
-                      onLeave: () => _confirmLeave(context, team),
-                      onDelete: () => _confirmDelete(context, team),
-                    ),
-                  ],
-                ),
+            ),
+          ),
         );
       },
     );
@@ -412,59 +457,480 @@ class _MembersTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: EdgeInsets.only(top: 12.h, bottom: 40.h),
-      children: [
-        InviteCodeCard(
-          inviteCode: team.inviteCode,
-          isOwner: isOwner,
-          onRegenerate: isOwner
-              ? () async {
-                  debugPrint('⚙️ [TeamDetailView] User requested new invite code');
-                  final newCode = await context
-                      .read<TeamCubit>()
-                      .regenerateInviteCode(team.id, team);
-                  if (context.mounted && newCode != null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('New invite code generated!'),
-                        backgroundColor: AppColors.success,
-                        behavior: SnackBarBehavior.floating,
-                      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWide = constraints.maxWidth >= 700;
+        return ListView(
+          padding: EdgeInsets.only(top: 12.h, bottom: 40.h),
+          children: [
+            InviteCodeCard(
+              inviteCode: team.inviteCode,
+              isOwner: isOwner,
+              onRegenerate: isOwner
+                  ? () async {
+                      debugPrint('⚙️ [TeamDetailView] User requested new invite code');
+                      final newCode = await context
+                          .read<TeamCubit>()
+                          .regenerateInviteCode(team.id, team);
+                      if (context.mounted && newCode != null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('New invite code generated!'),
+                            backgroundColor: AppColors.success,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
+                    }
+                  : null,
+            ),
+            SizedBox(height: 8.h),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.w),
+              child: Text(
+                '${members.length} Member${members.length != 1 ? 's' : ''}',
+                style: TextStyle(
+                    color: AppColors.lightGrey,
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w500),
+              ),
+            ),
+            SizedBox(height: 6.h),
+            if (isWide)
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.w),
+                child: GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisExtent: 74,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 8,
+                  ),
+                  itemCount: members.length,
+                  itemBuilder: (context, index) {
+                    final member = members[index];
+                    return MemberTile(
+                      member: member,
+                      isCurrentUserOwner: isOwner,
+                      margin: EdgeInsets.zero,
+                      onRemove: () {
+                        debugPrint(
+                            '⚙️ [TeamDetailView] User removed member ${member.displayName} (${member.uid})');
+                        context
+                            .read<TeamCubit>()
+                            .removeMember(team.id, member.uid, team);
+                      },
+                      onChangeRole: (newRole) {
+                        debugPrint(
+                            '⚙️ [TeamDetailView] User changed member ${member.displayName} role to ${newRole.name}');
+                        context
+                            .read<TeamCubit>()
+                            .updateMemberRole(team.id, member.uid, newRole, team);
+                      },
                     );
-                  }
-                }
-              : null,
+                  },
+                ),
+              )
+            else
+              ...members.map((member) => MemberTile(
+                    member: member,
+                    isCurrentUserOwner: isOwner,
+                    onRemove: () {
+                      debugPrint(
+                          '⚙️ [TeamDetailView] User removed member ${member.displayName} (${member.uid})');
+                      context
+                          .read<TeamCubit>()
+                          .removeMember(team.id, member.uid, team);
+                    },
+                    onChangeRole: (newRole) {
+                      debugPrint(
+                          '⚙️ [TeamDetailView] User changed member ${member.displayName} role to ${newRole.name}');
+                      context
+                          .read<TeamCubit>()
+                          .updateMemberRole(team.id, member.uid, newRole, team);
+                    },
+                  )),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _TeamTasksTab extends StatefulWidget {
+  final TeamModel team;
+  final List<TeamMemberModel> members;
+  final bool isOwnerOrAdmin;
+
+  const _TeamTasksTab({
+    required this.team,
+    required this.members,
+    required this.isOwnerOrAdmin,
+  });
+
+  @override
+  State<_TeamTasksTab> createState() => _TeamTasksTabState();
+}
+
+class _TeamTasksTabState extends State<_TeamTasksTab> {
+  String? _filterMemberName;
+
+  void _openAddTask(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => AddTaskForm(
+        initialTeamId: widget.team.id,
+        initialTeamName: widget.team.name,
+        initialAssignee: _filterMemberName,
+      ),
+    );
+  }
+
+  Widget _buildTaskCard(BuildContext context, TaskModel task,
+      {EdgeInsetsGeometry? margin}) {
+    final now = DateTime.now();
+    final isOverdue = !task.isCompleted &&
+        task.dueDate != null &&
+        now.isAfter(task.dueDate!);
+    final isDeadlineMet = task.isCompleted;
+    final deadlineColor = isDeadlineMet
+        ? const Color(0xFF22C55E)
+        : (isOverdue
+            ? const Color(0xFFEF4444)
+            : AppColors.lightGrey);
+
+    return Container(
+      margin: margin ??
+          EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10.r),
+        border: Border.all(
+          color: task.isCompleted
+              ? Colors.transparent
+              : AppColors.primaryColor.withValues(alpha: 0.2),
         ),
-        SizedBox(height: 8.h),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.w),
-          child: Text(
-            '${members.length} Member${members.length != 1 ? 's' : ''}',
-            style: TextStyle(
-                color: AppColors.lightGrey,
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w500),
+      ),
+      child: Material(
+        color: AppColors.textFieldBackgroundColor,
+        borderRadius: BorderRadius.circular(10.r),
+        child: ListTile(
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10.r)),
+          contentPadding:
+              EdgeInsets.symmetric(horizontal: 14.w, vertical: 6.h),
+        leading: InkWell(
+          onTap: () => context
+              .read<TaskCubit>()
+              .toggleTaskCompletion(task.id),
+          customBorder: const CircleBorder(),
+          child: Container(
+            width: 24.w,
+            height: 24.h,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: task.isCompleted
+                    ? AppColors.primaryColor
+                    : AppColors.lightGrey,
+                width: 1.5,
+              ),
+              color: task.isCompleted
+                  ? AppColors.primaryColor
+                  : Colors.transparent,
+            ),
+            child: task.isCompleted
+                ? const Icon(Icons.check,
+                    size: 16, color: Colors.white)
+                : null,
           ),
         ),
-        SizedBox(height: 6.h),
-        ...members.map((member) => MemberTile(
-              member: member,
-              isCurrentUserOwner: isOwner,
-              onRemove: () {
-                debugPrint('⚙️ [TeamDetailView] User removed member ${member.displayName} (${member.uid})');
-                context
-                    .read<TeamCubit>()
-                    .removeMember(team.id, member.uid, team);
-              },
-              onChangeRole: (newRole) {
-                debugPrint('⚙️ [TeamDetailView] User changed member ${member.displayName} role to ${newRole.name}');
-                context
-                    .read<TeamCubit>()
-                    .updateMemberRole(team.id, member.uid, newRole, team);
-              },
-            )),
-      ],
+        title: Text(
+          task.title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: task.isCompleted
+                ? AppColors.lightGrey
+                : Colors.white,
+            fontSize: 15.sp,
+            fontWeight: FontWeight.w600,
+            decoration: task.isCompleted
+                ? TextDecoration.lineThrough
+                : null,
+          ),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (task.description.isNotEmpty) ...[
+              SizedBox(height: 2.h),
+              Text(
+                task.description,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                    color: AppColors.lightGrey, fontSize: 12.sp),
+              ),
+            ],
+            SizedBox(height: 6.h),
+            Wrap(
+              spacing: 8.w,
+              runSpacing: 4.h,
+              children: [
+                if (task.assignedTo != null &&
+                    task.assignedTo!.isNotEmpty) ...[
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                        horizontal: 6.w, vertical: 2.h),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryColor
+                          .withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(4.r),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Iconsax.user,
+                            size: 10,
+                            color: AppColors.primaryColor),
+                        SizedBox(width: 4.w),
+                        Text(
+                          task.assignedTo!,
+                          style: TextStyle(
+                              color: AppColors.primaryColor,
+                              fontSize: 10.sp,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                if (task.dueDate != null) ...[
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                        horizontal: 6.w, vertical: 2.h),
+                    decoration: BoxDecoration(
+                      color: deadlineColor.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(4.r),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          isDeadlineMet
+                              ? Icons.check_circle_outline_rounded
+                              : (isOverdue
+                                  ? Icons.warning_amber_rounded
+                                  : Iconsax.calendar_1),
+                          size: 10,
+                          color: deadlineColor,
+                        ),
+                        SizedBox(width: 4.w),
+                        Text(
+                          DateFormat('MMM dd')
+                              .format(task.dueDate!),
+                          style: TextStyle(
+                              color: deadlineColor,
+                              fontSize: 10.sp,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ),
+        trailing: const Icon(Icons.arrow_forward_ios,
+            size: 14, color: AppColors.lightGrey),
+        onTap: () {
+          Navigator.pushNamed(context, Routes.editTaskView,
+              arguments: task);
+        },
+      ),
+    ),
+  );
+}
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<TaskCubit, TaskState>(
+      builder: (context, state) {
+        final teamTasks = state.allTasks.where((t) {
+          if (t.teamId == widget.team.id) return true;
+          if (t.teamName != null && t.teamName == widget.team.name) return true;
+          return false;
+        }).toList();
+
+        final displayedTasks = _filterMemberName == null
+            ? teamTasks
+            : teamTasks.where((t) => t.assignedTo == _filterMemberName).toList();
+
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final isDesktop = constraints.maxWidth >= 950;
+            final isTablet =
+                constraints.maxWidth >= 650 && constraints.maxWidth < 950;
+            final isGrid = isDesktop || isTablet;
+
+            return Scaffold(
+              backgroundColor: Colors.transparent,
+              floatingActionButton: FloatingActionButton.extended(
+                backgroundColor: AppColors.primaryColor,
+                icon: const Icon(Icons.add, color: Colors.white),
+                label: const Text('Add Team Task',
+                    style: TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold)),
+                onPressed: () => _openAddTask(context),
+              ),
+              body: ListView(
+                padding: EdgeInsets.only(top: 14.h, bottom: 80.h),
+                children: [
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16.w),
+                    child: Text('Filter by Teammate',
+                        style: TextStyle(
+                            color: AppColors.lightGrey,
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w500)),
+                  ),
+                  SizedBox(height: 8.h),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    padding: EdgeInsets.symmetric(horizontal: 16.w),
+                    physics: const BouncingScrollPhysics(),
+                    child: Row(
+                      children: [
+                        ChoiceChip(
+                          label: Text('All (${teamTasks.length})'),
+                          selected: _filterMemberName == null,
+                          selectedColor: AppColors.primaryColor,
+                          labelStyle: TextStyle(
+                            color: _filterMemberName == null
+                                ? Colors.white
+                                : AppColors.lightGrey,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          backgroundColor: AppColors.textFieldBackgroundColor,
+                          onSelected: (_) =>
+                              setState(() => _filterMemberName = null),
+                        ),
+                        SizedBox(width: 8.w),
+                        ...widget.members.map((member) {
+                          final count = teamTasks
+                              .where((t) => t.assignedTo == member.displayName)
+                              .length;
+                          final isSelected =
+                              _filterMemberName == member.displayName;
+                          return Padding(
+                            padding: EdgeInsets.only(right: 8.w),
+                            child: ChoiceChip(
+                              avatar: CircleAvatar(
+                                radius: 10.r,
+                                backgroundColor: AppColors.primaryColor
+                                    .withValues(alpha: 0.3),
+                                child: Text(
+                                  member.displayName.isNotEmpty
+                                      ? member.displayName[0].toUpperCase()
+                                      : 'U',
+                                  style: const TextStyle(
+                                      fontSize: 10, color: Colors.white),
+                                ),
+                              ),
+                              label: Text('${member.displayName} ($count)'),
+                              selected: isSelected,
+                              selectedColor: AppColors.primaryColor,
+                              labelStyle: TextStyle(
+                                color: isSelected
+                                    ? Colors.white
+                                    : AppColors.lightGrey,
+                                fontWeight: isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                              ),
+                              backgroundColor:
+                                  AppColors.textFieldBackgroundColor,
+                              onSelected: (_) => setState(() =>
+                                  _filterMemberName =
+                                      isSelected ? null : member.displayName),
+                            ),
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 16.h),
+                  if (displayedTasks.isEmpty)
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                          horizontal: 24.w, vertical: 40.h),
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Iconsax.task,
+                                size: 50.r,
+                                color:
+                                    AppColors.lightGrey.withValues(alpha: 0.3)),
+                            SizedBox(height: 14.h),
+                            Text(
+                              _filterMemberName == null
+                                  ? 'No tasks in this project yet.'
+                                  : 'No tasks assigned to $_filterMemberName yet.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15.sp,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                            SizedBox(height: 6.h),
+                            Text(
+                              'Tap "+ Add Team Task" below to assign work to your teammates.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                  color: AppColors.lightGrey, fontSize: 12.sp),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  else if (isGrid)
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16.w),
+                      child: GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate:
+                            SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: isDesktop ? 3 : 2,
+                          mainAxisExtent: 108,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 10,
+                        ),
+                        itemCount: displayedTasks.length,
+                        itemBuilder: (context, index) {
+                          return _buildTaskCard(
+                            context,
+                            displayedTasks[index],
+                            margin: EdgeInsets.zero,
+                          );
+                        },
+                      ),
+                    )
+                  else
+                    ...displayedTasks
+                        .map((task) => _buildTaskCard(context, task)),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }
@@ -491,113 +957,119 @@ class _SettingsTab extends StatelessWidget {
   }) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      decoration: BoxDecoration(
+      child: Material(
         color: AppColors.textFieldBackgroundColor,
         borderRadius: BorderRadius.circular(10),
-      ),
-      child: ListTile(
-        leading: Icon(icon, color: color ?? AppColors.primaryColor),
-        title: Text(title,
-            style: TextStyle(color: color ?? Colors.white, fontSize: 15)),
-        subtitle: subtitle != null
-            ? Text(subtitle,
-                style: const TextStyle(color: AppColors.lightGrey, fontSize: 12))
-            : null,
-        trailing: const Icon(Icons.arrow_forward_ios,
-            size: 14, color: AppColors.lightGrey),
-        onTap: onTap,
+        child: ListTile(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          leading: Icon(icon, color: color ?? AppColors.primaryColor),
+          title: Text(title,
+              style: TextStyle(color: color ?? Colors.white, fontSize: 15)),
+          subtitle: subtitle != null
+              ? Text(subtitle,
+                  style: const TextStyle(color: AppColors.lightGrey, fontSize: 12))
+              : null,
+          trailing: const Icon(Icons.arrow_forward_ios,
+              size: 14, color: AppColors.lightGrey),
+          onTap: onTap,
+        ),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.only(top: 16, bottom: 40),
-      children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          child: Text('Team Info',
-              style: TextStyle(
-                  color: AppColors.lightGrey,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600)),
-        ),
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: AppColors.textFieldBackgroundColor,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 650),
+        child: ListView(
+          padding: const EdgeInsets.only(top: 16, bottom: 40),
+          children: [
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Text('Team Info',
+                  style: TextStyle(
+                      color: AppColors.lightGrey,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600)),
+            ),
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.textFieldBackgroundColor,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: team.color.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(team.icon, color: team.color, size: 22),
+                  Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: team.color.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(team.icon, color: team.color, size: 22),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(team.name,
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16)),
+                            if (team.description.isNotEmpty)
+                              Text(team.description,
+                                  style: const TextStyle(
+                                      color: AppColors.lightGrey, fontSize: 13)),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(team.name,
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16)),
-                        if (team.description.isNotEmpty)
-                          Text(team.description,
-                              style: const TextStyle(
-                                  color: AppColors.lightGrey, fontSize: 13)),
-                      ],
-                    ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Created ${_formatDate(team.createdAt)}  ·  ${team.memberUids.length} members',
+                    style: const TextStyle(color: AppColors.lightGrey, fontSize: 11),
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
-              Text(
-                'Created ${_formatDate(team.createdAt)}  ·  ${team.memberUids.length} members',
-                style: const TextStyle(color: AppColors.lightGrey, fontSize: 11),
+            ),
+            const SizedBox(height: 16),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Text('Danger Zone',
+                  style: TextStyle(
+                      color: AppColors.error,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600)),
+            ),
+            if (!isOwner)
+              _settingTile(
+                icon: Icons.exit_to_app_rounded,
+                title: 'Leave Team',
+                subtitle: 'You will be removed from this team',
+                color: AppColors.error,
+                onTap: onLeave,
               ),
-            ],
-          ),
+            if (isOwner)
+              _settingTile(
+                icon: Icons.delete_forever_rounded,
+                title: 'Delete Team',
+                subtitle:
+                    'Permanently deletes the team and removes all members',
+                color: AppColors.error,
+                onTap: onDelete,
+              ),
+          ],
         ),
-        const SizedBox(height: 16),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          child: Text('Danger Zone',
-              style: TextStyle(
-                  color: AppColors.error,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600)),
-        ),
-        if (!isOwner)
-          _settingTile(
-            icon: Icons.exit_to_app_rounded,
-            title: 'Leave Team',
-            subtitle: 'You will be removed from this team',
-            color: AppColors.error,
-            onTap: onLeave,
-          ),
-        if (isOwner)
-          _settingTile(
-            icon: Icons.delete_forever_rounded,
-            title: 'Delete Team',
-            subtitle:
-                'Permanently deletes the team and removes all members',
-            color: AppColors.error,
-            onTap: onDelete,
-          ),
-      ],
+      ),
     );
   }
 

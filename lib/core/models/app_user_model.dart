@@ -5,12 +5,14 @@ class AppUserModel {
   final String displayName;
   final String email;
   final String? photoUrl;
+  final String role; // 'Project Manager' or 'Programmer / Developer'
 
   const AppUserModel({
     required this.uid,
     required this.displayName,
     required this.email,
     this.photoUrl,
+    this.role = 'Programmer / Developer',
   });
 
   Map<String, dynamic> toMap() {
@@ -19,6 +21,7 @@ class AppUserModel {
       'displayName': displayName,
       'email': email,
       'photoUrl': photoUrl,
+      'role': role,
       'lastActive': DateTime.now().toIso8601String(),
     };
   }
@@ -34,6 +37,7 @@ class AppUserModel {
           : defaultName,
       email: email,
       photoUrl: map['photoUrl'] as String?,
+      role: (map['role'] as String?) ?? 'Programmer / Developer',
     );
   }
 

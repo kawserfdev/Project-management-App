@@ -74,6 +74,44 @@ class TaskComment {
   }
 }
 
+class TaskStatusLog {
+  final String id;
+  final String fromStatus;
+  final String toStatus;
+  final String updatedBy;
+  final DateTime timestamp;
+
+  const TaskStatusLog({
+    required this.id,
+    required this.fromStatus,
+    required this.toStatus,
+    required this.updatedBy,
+    required this.timestamp,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'fromStatus': fromStatus,
+      'toStatus': toStatus,
+      'updatedBy': updatedBy,
+      'timestamp': timestamp.toIso8601String(),
+    };
+  }
+
+  factory TaskStatusLog.fromMap(Map<String, dynamic> map) {
+    return TaskStatusLog(
+      id: (map['id'] as String?) ?? '',
+      fromStatus: (map['fromStatus'] as String?) ?? 'pending',
+      toStatus: (map['toStatus'] as String?) ?? 'pending',
+      updatedBy: (map['updatedBy'] as String?) ?? 'User',
+      timestamp: map['timestamp'] != null
+          ? DateTime.tryParse(map['timestamp'] as String) ?? DateTime.now()
+          : DateTime.now(),
+    );
+  }
+}
+
 /// Project & Task Statuses:
 /// 1. Started / Pending ('pending')
 /// 2. In Progress / Active ('in_progress')
@@ -137,6 +175,10 @@ class TaskModel {
   final List<SubTask> subtasks;
   final List<TaskComment> comments;
   final String? assignedTo;
+  final String? assignedToUid;
+  final String? teamId;
+  final String? teamName;
+  final List<TaskStatusLog> statusLogs;
   final DateTime createdAt;
 
   TaskModel({
@@ -155,6 +197,10 @@ class TaskModel {
     this.subtasks = const [],
     this.comments = const [],
     this.assignedTo,
+    this.assignedToUid,
+    this.teamId,
+    this.teamName,
+    this.statusLogs = const [],
     DateTime? createdAt,
   })  : status = status != null
             ? TaskStatus.fromKey(status).key
@@ -178,6 +224,10 @@ class TaskModel {
     List<SubTask>? subtasks,
     List<TaskComment>? comments,
     String? assignedTo,
+    String? assignedToUid,
+    String? teamId,
+    String? teamName,
+    List<TaskStatusLog>? statusLogs,
     DateTime? createdAt,
   }) {
     String newStatus = status ?? this.status;
@@ -207,6 +257,10 @@ class TaskModel {
       subtasks: subtasks ?? this.subtasks,
       comments: comments ?? this.comments,
       assignedTo: assignedTo ?? this.assignedTo,
+      assignedToUid: assignedToUid ?? this.assignedToUid,
+      teamId: teamId ?? this.teamId,
+      teamName: teamName ?? this.teamName,
+      statusLogs: statusLogs ?? this.statusLogs,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -228,6 +282,10 @@ class TaskModel {
       'subtasks': jsonEncode(subtasks.map((s) => s.toMap()).toList()),
       'comments': jsonEncode(comments.map((c) => c.toMap()).toList()),
       'assignedTo': assignedTo,
+      'assignedToUid': assignedToUid,
+      'teamId': teamId,
+      'teamName': teamName,
+      'statusLogs': jsonEncode(statusLogs.map((l) => l.toMap()).toList()),
       'createdAt': createdAt.toIso8601String(),
     };
   }
@@ -265,6 +323,22 @@ class TaskModel {
       }
     }
 
+    List<TaskStatusLog> statusLogsList = [];
+    if (map['statusLogs'] != null) {
+      if (map['statusLogs'] is String) {
+        try {
+          final decoded = jsonDecode(map['statusLogs'] as String) as List;
+          statusLogsList = decoded
+              .map((item) => TaskStatusLog.fromMap(item as Map<String, dynamic>))
+              .toList();
+        } catch (_) {}
+      } else if (map['statusLogs'] is List) {
+        statusLogsList = (map['statusLogs'] as List)
+            .map((item) => TaskStatusLog.fromMap(item as Map<String, dynamic>))
+            .toList();
+      }
+    }
+
     final isCompleted = map['isCompleted'] == 1 || map['isCompleted'] == true;
     final rawStatus = map['status'] as String?;
     final status = rawStatus != null
@@ -287,6 +361,10 @@ class TaskModel {
       subtasks: subtasksList,
       comments: commentsList,
       assignedTo: map['assignedTo'] as String?,
+      assignedToUid: map['assignedToUid'] as String?,
+      teamId: map['teamId'] as String?,
+      teamName: map['teamName'] as String?,
+      statusLogs: statusLogsList,
       createdAt: map['createdAt'] != null
           ? DateTime.tryParse(map['createdAt']) ?? DateTime.now()
           : DateTime.now(),

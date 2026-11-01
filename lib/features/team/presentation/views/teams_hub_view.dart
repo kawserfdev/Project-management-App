@@ -29,21 +29,41 @@ class _TeamsHubContent extends StatelessWidget {
   const _TeamsHubContent();
 
   void _openCreateTeam(BuildContext context) {
-    debugPrint('👥 [TeamsHubView] Opening Create Team bottom sheet');
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => BlocProvider.value(
-        value: context.read<TeamCubit>(),
-        child: const CreateTeamSheet(),
-      ),
-    ).then((team) {
-      if (team != null && context.mounted) {
-        debugPrint('👥 [TeamsHubView] Create Team sheet closed with result, reloading teams');
-        context.read<TeamCubit>().loadMyTeams();
-      }
-    });
+    debugPrint('👥 [TeamsHubView] Opening Create Team');
+    final isWide = MediaQuery.of(context).size.width >= 650;
+    if (isWide) {
+      showDialog(
+        context: context,
+        builder: (_) => BlocProvider.value(
+          value: context.read<TeamCubit>(),
+          child: const Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+            child: CreateTeamSheet(),
+          ),
+        ),
+      ).then((team) {
+        if (team != null && context.mounted) {
+          debugPrint('👥 [TeamsHubView] Create Team dialog closed with result, reloading teams');
+          context.read<TeamCubit>().loadMyTeams();
+        }
+      });
+    } else {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => BlocProvider.value(
+          value: context.read<TeamCubit>(),
+          child: const CreateTeamSheet(),
+        ),
+      ).then((team) {
+        if (team != null && context.mounted) {
+          debugPrint('👥 [TeamsHubView] Create Team sheet closed with result, reloading teams');
+          context.read<TeamCubit>().loadMyTeams();
+        }
+      });
+    }
   }
 
   void _openJoinTeam(BuildContext context) {
@@ -52,7 +72,12 @@ class _TeamsHubContent extends StatelessWidget {
       context: context,
       builder: (_) => BlocProvider.value(
         value: context.read<TeamCubit>(),
-        child: const JoinTeamDialog(),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: const JoinTeamDialog(),
+          ),
+        ),
       ),
     ).then((team) {
       if (team != null && context.mounted) {
@@ -112,100 +137,143 @@ class _TeamsHubContent extends StatelessWidget {
                 TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         onPressed: () => _openCreateTeam(context),
       ),
-      body: BlocBuilder<TeamCubit, TeamState>(
-        builder: (context, state) {
-          if (state is TeamLoading) {
-            return const Center(
-              child: CircularProgressIndicator(color: AppColors.primaryColor),
-            );
-          }
-
-          if (state is TeamError) {
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.error_outline,
-                      color: AppColors.error, size: 48),
-                  SizedBox(height: 12.h),
-                  Text(state.message,
-                      style: const TextStyle(color: AppColors.lightGrey)),
-                  SizedBox(height: 12.h),
-                  TextButton(
-                    onPressed: () =>
-                        context.read<TeamCubit>().loadMyTeams(),
-                    child: const Text('Retry',
-                        style:
-                            TextStyle(color: AppColors.primaryColor)),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          final teams = state is TeamsLoaded ? state.teams : <TeamModel>[];
-
-          if (teams.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.group_outlined,
-                      size: 72.r,
-                      color: AppColors.lightGrey.withValues(alpha: 0.4)),
-                  SizedBox(height: 16.h),
-                  Text(
-                    "You're not in any team yet",
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18.sp,
-                        fontWeight: FontWeight.w600),
-                  ),
-                  SizedBox(height: 8.h),
-                  Text(
-                    'Create a new team or join one with an invite code',
-                    style: TextStyle(
-                        color: AppColors.lightGrey, fontSize: 13.sp),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: 24.h),
-                  OutlinedButton.icon(
-                    icon: const Icon(Icons.vpn_key_outlined,
-                        color: AppColors.primaryColor, size: 16),
-                    label: const Text('Join by Code',
-                        style: TextStyle(color: AppColors.primaryColor)),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: AppColors.primaryColor),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8.r)),
-                    ),
-                    onPressed: () => _openJoinTeam(context),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return RefreshIndicator(
-            color: AppColors.primaryColor,
-            onRefresh: () => context.read<TeamCubit>().loadMyTeams(),
-            child: ListView.builder(
-              padding: EdgeInsets.only(top: 8.h, bottom: 100.h),
-              itemCount: teams.length,
-              itemBuilder: (context, index) {
-                final team = teams[index];
-                final myRole = team.ownerId == currentUid
-                    ? TeamRole.owner
-                    : TeamRole.member;
-                return TeamCard(
-                  team: team,
-                  myRole: myRole,
-                  onTap: () => _openTeamDetail(context, team, myRole),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1150),
+          child: BlocBuilder<TeamCubit, TeamState>(
+            builder: (context, state) {
+              if (state is TeamLoading) {
+                return const Center(
+                  child: CircularProgressIndicator(color: AppColors.primaryColor),
                 );
-              },
-            ),
-          );
-        },
+              }
+
+              if (state is TeamError) {
+                return Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.error_outline,
+                          color: AppColors.error, size: 48),
+                      SizedBox(height: 12.h),
+                      Text(state.message,
+                          style: const TextStyle(color: AppColors.lightGrey)),
+                      SizedBox(height: 12.h),
+                      TextButton(
+                        onPressed: () =>
+                            context.read<TeamCubit>().loadMyTeams(),
+                        child: const Text('Retry',
+                            style:
+                                TextStyle(color: AppColors.primaryColor)),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              final teams = state is TeamsLoaded ? state.teams : <TeamModel>[];
+
+              if (teams.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.group_outlined,
+                          size: 72.r,
+                          color: AppColors.lightGrey.withValues(alpha: 0.4)),
+                      SizedBox(height: 16.h),
+                      Text(
+                        "You're not in any team yet",
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18.sp,
+                            fontWeight: FontWeight.w600),
+                      ),
+                      SizedBox(height: 8.h),
+                      Text(
+                        'Create a new team or join one with an invite code',
+                        style: TextStyle(
+                            color: AppColors.lightGrey, fontSize: 13.sp),
+                        textAlign: TextAlign.center,
+                      ),
+                      SizedBox(height: 24.h),
+                      OutlinedButton.icon(
+                        icon: const Icon(Icons.vpn_key_outlined,
+                            color: AppColors.primaryColor, size: 16),
+                        label: const Text('Join by Code',
+                            style: TextStyle(color: AppColors.primaryColor)),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: AppColors.primaryColor),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8.r)),
+                        ),
+                        onPressed: () => _openJoinTeam(context),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              return LayoutBuilder(
+                builder: (context, constraints) {
+                  final isDesktop = constraints.maxWidth >= 950;
+                  final isTablet = constraints.maxWidth >= 600 && !isDesktop;
+
+                  if (isDesktop || isTablet) {
+                    final columns = isDesktop ? 3 : 2;
+                    return RefreshIndicator(
+                      color: AppColors.primaryColor,
+                      onRefresh: () => context.read<TeamCubit>().loadMyTeams(),
+                      child: GridView.builder(
+                        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: columns,
+                          crossAxisSpacing: 16.w,
+                          mainAxisSpacing: 16.h,
+                          mainAxisExtent: 130.h,
+                        ),
+                        itemCount: teams.length,
+                        itemBuilder: (context, index) {
+                          final team = teams[index];
+                          final myRole = team.ownerId == currentUid
+                              ? TeamRole.owner
+                              : TeamRole.member;
+                          return TeamCard(
+                            team: team,
+                            myRole: myRole,
+                            margin: EdgeInsets.zero,
+                            onTap: () => _openTeamDetail(context, team, myRole),
+                          );
+                        },
+                      ),
+                    );
+                  }
+
+                  // Mobile list layout
+                  return RefreshIndicator(
+                    color: AppColors.primaryColor,
+                    onRefresh: () => context.read<TeamCubit>().loadMyTeams(),
+                    child: ListView.builder(
+                      padding: EdgeInsets.only(top: 8.h, bottom: 100.h),
+                      itemCount: teams.length,
+                      itemBuilder: (context, index) {
+                        final team = teams[index];
+                        final myRole = team.ownerId == currentUid
+                            ? TeamRole.owner
+                            : TeamRole.member;
+                        return TeamCard(
+                          team: team,
+                          myRole: myRole,
+                          onTap: () => _openTeamDetail(context, team, myRole),
+                        );
+                      },
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
       ),
     );
   }

@@ -5,8 +5,10 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:task_manager_app/core/constants/app_colors.dart';
 import 'package:task_manager_app/core/di/service_locator.dart';
+import 'package:task_manager_app/core/models/app_user_model.dart';
 import 'package:task_manager_app/core/routes/routes.dart';
 import 'package:task_manager_app/core/services/session_manager.dart';
+import 'package:task_manager_app/core/services/user_directory_service.dart';
 import 'package:task_manager_app/core/themes/app_text_themes.dart';
 import 'package:task_manager_app/features/authentication/data/repos/auth_repo.dart';
 import 'package:task_manager_app/features/task/presentation/manager/task_cubit.dart';
@@ -66,6 +68,105 @@ class ProfileView extends StatelessWidget {
     );
   }
 
+  void _showEditProfileDialog(
+      BuildContext context, User? user, String currentName, String currentEmail) {
+    final nameCtrl = TextEditingController(text: currentName);
+    String selectedRole = 'Programmer / Developer';
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (dialogCtx, setDialogState) => AlertDialog(
+          backgroundColor: AppColors.textFieldBackgroundColor,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+          title: const Text('Edit Profile & Role', style: TextStyle(color: Colors.white)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Display Name', style: TextStyle(color: AppColors.lightGrey, fontSize: 13.sp)),
+              SizedBox(height: 6.h),
+              TextField(
+                controller: nameCtrl,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: AppColors.darkBlue,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r), borderSide: BorderSide.none),
+                ),
+              ),
+              SizedBox(height: 16.h),
+              Text('Workspace Role', style: TextStyle(color: AppColors.lightGrey, fontSize: 13.sp)),
+              SizedBox(height: 6.h),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 12.w),
+                decoration: BoxDecoration(
+                  color: AppColors.darkBlue,
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: selectedRole,
+                    dropdownColor: AppColors.textFieldBackgroundColor,
+                    isExpanded: true,
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'Project Manager',
+                        child: Text('Project Manager', style: TextStyle(color: Colors.white)),
+                      ),
+                      DropdownMenuItem(
+                        value: 'Programmer / Developer',
+                        child: Text('Programmer / Developer', style: TextStyle(color: Colors.white)),
+                      ),
+                    ],
+                    onChanged: (val) {
+                      if (val != null) {
+                        setDialogState(() => selectedRole = val);
+                      }
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel', style: TextStyle(color: AppColors.lightGrey)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryColor),
+              onPressed: () async {
+                final newName = nameCtrl.text.trim();
+                if (newName.isNotEmpty) {
+                  try {
+                    await user?.updateDisplayName(newName);
+                    await SessionManager.saveUserSession(
+                      id: user?.uid ?? '',
+                      email: currentEmail,
+                      displayName: newName,
+                    );
+                    if (user != null) {
+                      await getIt<UserDirectoryService>().saveUser(AppUserModel(
+                        uid: user.uid,
+                        displayName: newName,
+                        email: currentEmail,
+                        role: selectedRole,
+                        photoUrl: user.photoURL,
+                      ));
+                    }
+                  } catch (_) {}
+                }
+                if (context.mounted) Navigator.pop(ctx);
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final activeUser = _currentUser;
@@ -117,6 +218,18 @@ class ProfileView extends StatelessWidget {
                   Text(
                     email,
                     style: TextStyle(color: AppColors.lightGrey, fontSize: 13.sp),
+                  ),
+                  SizedBox(height: 10.h),
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.primaryColor,
+                      side: const BorderSide(color: AppColors.primaryColor),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
+                      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
+                    ),
+                    icon: const Icon(Iconsax.edit, size: 14),
+                    label: const Text('Edit Profile & Role', style: TextStyle(fontSize: 12)),
+                    onPressed: () => _showEditProfileDialog(context, activeUser, displayName, email),
                   ),
                   SizedBox(height: 24.h),
 

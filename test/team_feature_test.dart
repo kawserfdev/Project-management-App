@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:task_manager_app/features/task/data/models/task_model.dart';
 import 'package:task_manager_app/features/team/data/models/team_member_model.dart';
 import 'package:task_manager_app/features/team/data/models/team_model.dart';
 
@@ -49,6 +50,40 @@ void main() {
       final fromMap = TeamMemberModel.fromMap(map);
       expect(fromMap.role, TeamRole.admin);
       expect(fromMap.displayName, 'Test User');
+    });
+    test('TaskModel serializes and deserializes team & statusLogs correctly', () {
+      final now = DateTime.now();
+      final log = TaskStatusLog(
+        id: 'log_1',
+        fromStatus: 'pending',
+        toStatus: 'in_progress',
+        updatedBy: 'Lead PM',
+        timestamp: now,
+      );
+
+      final task = TaskModel(
+        id: 'task_team_1',
+        title: 'Build API Gateway',
+        teamId: 'team_alpha',
+        teamName: 'Alpha Squad',
+        assignedTo: 'Bob Programmer',
+        assignedToUid: 'dev_bob',
+        statusLogs: [log],
+        createdAt: now,
+      );
+
+      final map = task.toMap();
+      expect(map['teamId'], 'team_alpha');
+      expect(map['teamName'], 'Alpha Squad');
+      expect(map['assignedToUid'], 'dev_bob');
+
+      final fromMap = TaskModel.fromMap(map);
+      expect(fromMap.teamId, 'team_alpha');
+      expect(fromMap.teamName, 'Alpha Squad');
+      expect(fromMap.assignedTo, 'Bob Programmer');
+      expect(fromMap.statusLogs.length, 1);
+      expect(fromMap.statusLogs.first.toStatus, 'in_progress');
+      expect(fromMap.statusLogs.first.updatedBy, 'Lead PM');
     });
   });
 }

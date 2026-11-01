@@ -40,8 +40,18 @@ class TaskRepositoryImpl implements TaskRepository {
     if (userId != null && userId.isNotEmpty && remoteDataSource != null) {
       try {
         final remoteTasks = await remoteDataSource!.getTasks(userId);
-        if (remoteTasks.isNotEmpty) {
-          final merged = _mergeTasks(localTasks, remoteTasks);
+
+        // Dynamically fetch all tasks from all teams the user belongs to
+        final teamIds = await remoteDataSource!.getUserTeamIds(userId);
+        final allTeamTasks = <TaskModel>[];
+        for (final tId in teamIds) {
+          final tTasks = await remoteDataSource!.getTeamTasks(tId);
+          allTeamTasks.addAll(tTasks);
+        }
+
+        final combinedRemote = [...remoteTasks, ...allTeamTasks];
+        if (combinedRemote.isNotEmpty) {
+          final merged = _mergeTasks(localTasks, combinedRemote);
           await localDataSource.saveTasks(merged, userId: userId);
           return merged;
         } else if (localTasks.isNotEmpty) {
@@ -75,6 +85,9 @@ class TaskRepositoryImpl implements TaskRepository {
     if (userId != null && userId.isNotEmpty && remoteDataSource != null) {
       try {
         await remoteDataSource!.saveTask(task, userId);
+        if (task.teamId != null && task.teamId!.isNotEmpty) {
+          await remoteDataSource!.saveTeamTask(task.teamId!, task);
+        }
       } catch (_) {}
     }
   }
@@ -85,16 +98,24 @@ class TaskRepositoryImpl implements TaskRepository {
     if (userId != null && userId.isNotEmpty && remoteDataSource != null) {
       try {
         await remoteDataSource!.updateTask(task, userId);
+        if (task.teamId != null && task.teamId!.isNotEmpty) {
+          await remoteDataSource!.saveTeamTask(task.teamId!, task);
+        }
       } catch (_) {}
     }
   }
 
   @override
   Future<void> deleteTask(String id, {String? userId}) async {
+    final all = await localDataSource.getTasks(userId: userId);
+    final target = all.firstWhere((t) => t.id == id, orElse: () => TaskModel(id: id, title: ''));
     await localDataSource.deleteTask(id, userId: userId);
     if (userId != null && userId.isNotEmpty && remoteDataSource != null) {
       try {
         await remoteDataSource!.deleteTask(id, userId);
+        if (target.teamId != null && target.teamId!.isNotEmpty) {
+          await remoteDataSource!.deleteTeamTask(target.teamId!, id);
+        }
       } catch (_) {}
     }
   }

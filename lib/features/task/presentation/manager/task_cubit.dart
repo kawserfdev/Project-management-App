@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:task_manager_app/core/services/collaboration_service.dart';
 import 'package:task_manager_app/features/task/data/models/category_model.dart';
@@ -238,6 +239,17 @@ class TaskCubit extends Cubit<TaskState> {
     }
   }
 
+  String get _currentActorName {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      return (user?.displayName != null && user!.displayName!.isNotEmpty)
+          ? user.displayName!
+          : (user?.email?.split('@').first ?? 'User');
+    } catch (_) {
+      return 'User';
+    }
+  }
+
   /// Kanban Drag-and-drop: moves a task to a target status column
   Future<void> updateTaskStatus(String taskId, String newStatus) async {
     final idx = state.allTasks.indexWhere((t) => t.id == taskId);
@@ -248,23 +260,33 @@ class TaskCubit extends Cubit<TaskState> {
     if (target.status == normalized) return;
 
     final isCompleted = (normalized == 'completed');
+    final log = TaskStatusLog(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      fromStatus: target.status,
+      toStatus: normalized,
+      updatedBy: _currentActorName,
+      timestamp: DateTime.now(),
+    );
+
     final updated = target.copyWith(
       status: normalized,
       isCompleted: isCompleted,
+      statusLogs: [...target.statusLogs, log],
     );
 
     await updateTask(updated);
     collaborationService.broadcastStatusMoved(updated, normalized);
   }
 
-  Future<void> addCommentToTask(String taskId, String message, {String author = 'You'}) async {
+  Future<void> addCommentToTask(String taskId, String message, {String? author}) async {
     final idx = state.allTasks.indexWhere((t) => t.id == taskId);
     if (idx == -1) return;
 
     final target = state.allTasks[idx];
+    final commentAuthor = author ?? _currentActorName;
     final newComment = TaskComment(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
-      author: author,
+      author: commentAuthor,
       message: message,
     );
 
@@ -305,9 +327,19 @@ class TaskCubit extends Cubit<TaskState> {
   Future<void> toggleTaskCompletion(String id) async {
     final task = state.allTasks.firstWhere((t) => t.id == id);
     final isDone = !task.isCompleted;
+    final newStatus = isDone ? 'completed' : 'pending';
+    final log = TaskStatusLog(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      fromStatus: task.status,
+      toStatus: newStatus,
+      updatedBy: _currentActorName,
+      timestamp: DateTime.now(),
+    );
+
     final updated = task.copyWith(
       isCompleted: isDone,
-      status: isDone ? 'completed' : 'pending',
+      status: newStatus,
+      statusLogs: [...task.statusLogs, log],
     );
     await updateTask(updated);
   }

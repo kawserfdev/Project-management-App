@@ -8,6 +8,7 @@ import 'package:task_manager_app/features/authentication/data/repos/auth_repo.da
 import 'package:task_manager_app/features/authentication/presentation/manager/cubits/login_with_email_and_password/login_with_email_and_password_cubit.dart';
 import 'package:task_manager_app/features/authentication/presentation/manager/cubits/registerwithemailandpassword/register_with_email_and_password_cubit.dart';
 import 'package:task_manager_app/features/focus/data/datasources/focus_local_data_source.dart';
+import 'package:task_manager_app/features/focus/data/datasources/focus_remote_data_source.dart';
 import 'package:task_manager_app/features/focus/data/repos/focus_repository.dart';
 import 'package:task_manager_app/features/focus/presentation/manager/focus_cubit.dart';
 import 'package:task_manager_app/features/home/presentation/manager/logic/navigation/navigation_cubit.dart';
@@ -40,8 +41,13 @@ Future<void> setupServiceLocator() async {
   // Register Focus Data Source, Repository & Cubit
   getIt.registerLazySingleton<FocusLocalDataSource>(
       () => FocusLocalDataSourceImpl());
+  getIt.registerLazySingleton<FocusRemoteDataSource>(
+      () => FocusRemoteDataSourceImpl());
   getIt.registerLazySingleton<FocusRepository>(
-      () => FocusRepositoryImpl(localDataSource: getIt<FocusLocalDataSource>()));
+      () => FocusRepositoryImpl(
+            localDataSource: getIt<FocusLocalDataSource>(),
+            remoteDataSource: getIt<FocusRemoteDataSource>(),
+          ));
   getIt.registerLazySingleton<FocusCubit>(
       () => FocusCubit(focusRepository: getIt<FocusRepository>())..init());
 

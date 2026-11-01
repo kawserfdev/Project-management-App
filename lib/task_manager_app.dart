@@ -101,6 +101,7 @@ class TaskManagerApp extends StatelessWidget {
             },
             builder: (context, child) {
               return MaterialApp(
+                key: const ValueKey('task_manager_material_app'),
                 debugShowCheckedModeBanner: false,
                 scrollBehavior: const AppScrollBehavior(),
                 title: 'Colliq-Team - Task Manager',

@@ -5,6 +5,7 @@ import 'package:task_manager_app/core/constants/app_colors.dart';
 import 'package:task_manager_app/core/di/service_locator.dart';
 import 'package:task_manager_app/core/models/app_user_model.dart';
 import 'package:task_manager_app/core/services/user_directory_service.dart';
+import 'package:task_manager_app/features/team/data/repos/team_repository.dart';
 
 class AssigneePickerDialog extends StatefulWidget {
   const AssigneePickerDialog({super.key, this.currentAssignee});
@@ -42,10 +43,41 @@ class _AssigneePickerDialogState extends State<AssigneePickerDialog> {
   Future<void> _loadUsers() async {
     final service = getIt<UserDirectoryService>();
     final users = await service.getRegisteredUsers();
+
+    // Dynamically fetch all teammates from the user's teams in Firestore
+    final List<AppUserModel> teammates = [];
+    try {
+      final teamRepo = getIt<TeamRepository>();
+      final myTeams = await teamRepo.getMyTeams();
+      for (final t in myTeams) {
+        final members = await teamRepo.getTeamMembers(t.id);
+        for (final m in members) {
+          teammates.add(AppUserModel(
+            uid: m.uid,
+            displayName: m.displayName.isNotEmpty ? m.displayName : 'Teammate',
+            email: '${t.name} • ${m.role.name.toUpperCase()} • ${m.email}',
+            photoUrl: m.photoUrl,
+          ));
+        }
+      }
+    } catch (_) {}
+
+    final combinedMap = <String, AppUserModel>{};
+    // Add teammates first so they appear at the top
+    for (final u in teammates) {
+      combinedMap[u.uid] = u;
+    }
+    // Add directory users
+    for (final u in users) {
+      combinedMap.putIfAbsent(u.uid, () => u);
+    }
+
+    final combined = combinedMap.values.toList();
+
     if (mounted) {
       setState(() {
-        _allUsers = users;
-        _filteredUsers = users;
+        _allUsers = combined;
+        _filteredUsers = combined;
         _isLoading = false;
       });
     }
